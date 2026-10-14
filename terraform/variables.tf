@@ -2,15 +2,28 @@
 # Terraform Input Variables Definition
 # ==============================================================================
 
-variable "cloudflare_account_id" {
+variable "account_id" {
   type        = string
   description = "The Cloudflare Account ID where resources will be provisioned."
   default     = ""
 }
 
-variable "cloudflare_api_token" {
+variable "cloudflare_account_id" {
+  type        = string
+  description = "The Cloudflare Account ID (alias for account_id)."
+  default     = ""
+}
+
+variable "api_token" {
   type        = string
   description = "Cloudflare API Token with Workers Scripts and KV Storage edit permissions."
+  sensitive   = true
+  default     = ""
+}
+
+variable "cloudflare_api_token" {
+  type        = string
+  description = "Cloudflare API Token (alias for api_token)."
   sensitive   = true
   default     = ""
 }

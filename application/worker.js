@@ -213,23 +213,26 @@ async function listAllTasks(env) {
     return INITIAL_TASKS;
   }
 
-  const listResult = await env.TASKS_KV.list({ prefix: 'task:' });
-  if (!listResult.keys || listResult.keys.length === 0) {
-    // Seed initial tasks if namespace is empty
+  // Check if the KV namespace has ever been initialized/seeded
+  const isSeeded = await env.TASKS_KV.get('_meta:seeded');
+  if (!isSeeded) {
     for (const item of INITIAL_TASKS) {
       await env.TASKS_KV.put(`task:${item.id}`, JSON.stringify(item));
     }
-    return INITIAL_TASKS;
+    await env.TASKS_KV.put('_meta:seeded', 'true');
   }
 
+  const listResult = await env.TASKS_KV.list({ prefix: 'task:' });
   const tasks = [];
-  for (const key of listResult.keys) {
-    const raw = await env.TASKS_KV.get(key.name);
-    if (raw) {
-      try {
-        tasks.push(JSON.parse(raw));
-      } catch {
-        // Skip unparseable
+  if (listResult && listResult.keys) {
+    for (const key of listResult.keys) {
+      const raw = await env.TASKS_KV.get(key.name);
+      if (raw) {
+        try {
+          tasks.push(JSON.parse(raw));
+        } catch {
+          // Skip unparseable
+        }
       }
     }
   }
@@ -650,7 +653,10 @@ document.addEventListener('DOMContentLoaded', () => {
   filterPriority.addEventListener('change', renderTasks);
   filterSort.addEventListener('change', renderTasks);
   refreshBtn.addEventListener('click', () => { showToast('Refreshing...', 'info'); loadTasks(); });
-  if (seedBtn) seedBtn.addEventListener('click', seedSampleTasks);
+  window.addEventListener('click', (e) => {
+    if (e.target === taskModal) closeModal();
+    if (e.target === deleteModal) closeDeleteModal();
+  });
   loadTasks();
 });
 
@@ -710,7 +716,11 @@ async function handleTaskFormSubmit(e) {
 async function toggleTaskStatus(id) {
   const task = tasks.find(t => t.id === id);
   if (!task) return;
-  const nextStatus = task.status === 'Pending' ? 'Completed' : 'Pending';
+  let nextStatus = 'Pending';
+  if (task.status === 'Pending') nextStatus = 'In Progress';
+  else if (task.status === 'In Progress') nextStatus = 'Completed';
+  else nextStatus = 'Pending';
+
   try {
     const res = await fetch(\`\${API_BASE}/\${id}\`, {
       method: 'PUT',
@@ -782,11 +792,11 @@ function renderTasks() {
       const stClass = \`badge-status-\${(task.status || 'pending').toLowerCase().replace(' ', '-')}\`;
       const dateStr = task.createdAt ? new Date(task.createdAt).toLocaleDateString() : 'N/A';
       tr.innerHTML = \`
-        <td><span class="task-id-badge">\${task.id}</span></td>
-        <td><strong>\${task.title}</strong></td>
-        <td><span class="badge badge-category">\${task.category || 'General'}</span></td>
-        <td><span class="badge \${prClass}">\${task.priority || 'Medium'}</span></td>
-        <td><span class="badge \${stClass}">\${task.status || 'Pending'}</span></td>
+        <td><span class="task-id-badge">\${escapeHtml(task.id)}</span></td>
+        <td><strong>\${escapeHtml(task.title)}</strong></td>
+        <td><span class="badge badge-category">\${escapeHtml(task.category || 'General')}</span></td>
+        <td><span class="badge \${prClass}">\${escapeHtml(task.priority || 'Medium')}</span></td>
+        <td><span class="badge \${stClass}">\${escapeHtml(task.status || 'Pending')}</span></td>
         <td style="color: var(--text-dim);">\${dateStr}</td>
         <td>
           <div class="action-buttons">
@@ -826,7 +836,7 @@ function openEditModal(id) {
   formTaskCategory.value = task.category || 'General';
   formTaskDue.value = task.dueDate || '';
   formTaskDesc.value = task.description || '';
-  modalTitle.innerHTML = \`<i class="fa-solid fa-pen-to-square"></i> Edit Task (\${task.id})\`;
+  modalTitle.innerHTML = \`<i class="fa-solid fa-pen-to-square"></i> Edit Task (\${escapeHtml(task.id)})\`;
   btnSubmitText.textContent = 'Update Task';
   taskModal.style.display = 'flex';
 }
@@ -838,12 +848,22 @@ function showToast(msg, type = 'info') {
   const c = document.getElementById('toast-container');
   const t = document.createElement('div');
   t.className = \`toast toast-\${type}\`;
-  t.innerHTML = \`<span>\${msg}</span>\`;
+  t.innerHTML = \`<span>\${escapeHtml(msg)}</span>\`;
   c.appendChild(t);
   setTimeout(() => t.remove(), 3500);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 window.toggleTaskStatus = toggleTaskStatus;
 window.openEditModal = openEditModal;
 window.requestDeleteTask = requestDeleteTask;
-`;
+\`;

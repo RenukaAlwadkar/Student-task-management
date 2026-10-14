@@ -3,6 +3,16 @@
 # modules/worker/main.tf
 # ==============================================================================
 
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.35"
+    }
+  }
+}
+
 resource "cloudflare_workers_script" "this" {
   account_id         = var.account_id
   name               = var.environment == "production" ? var.name : "${var.name}-${var.environment}"
