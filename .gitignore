@@ -1,0 +1,36 @@
+# Compiled files and local development
+node_modules/
+dist/
+build/
+.cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Terraform local state and provider cache
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+crash.log
+crash.*.log
+
+# Terraform variables containing secrets
+terraform.tfvars
+*.auto.tfvars
+*.tfvars.json
+
+# Environment variables and sensitive credentials
+.env
+.env.*
+!.env.example
+secrets.json
+
+# OS and IDE specific files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
