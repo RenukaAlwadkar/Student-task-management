@@ -2684,4 +2684,4 @@ function escapeHtml(str) {
 window.toggleTaskStatus = toggleTaskStatus;
 window.openEditModal = openEditModal;
 window.requestDeleteTask = requestDeleteTask;
-\`;
+`;

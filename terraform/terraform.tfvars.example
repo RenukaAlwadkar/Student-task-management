@@ -7,15 +7,15 @@
 # ==============================================================================
 
 # Your 32-character Cloudflare Account ID
-# Found at: Cloudflare Dashboard -> Workers & Pages (Overview right sidebar)
-cloudflare_account_id = "your_cloudflare_account_id_here"
+# Found at: Cloudflare Dashboard -> Workers & Pages (Overview right sidebar -> Account ID)
+account_id = "your_32_character_account_id_here"
 
 # Your Cloudflare API Token
 # Create at: Cloudflare Dashboard -> My Profile -> API Tokens -> Create Custom Token
 # Permissions required:
 #   - Account | Workers Scripts | Edit
 #   - Account | Workers KV Storage | Edit
-cloudflare_api_token = "your_cloudflare_api_token_here"
+api_token = "your_cloudflare_api_token_here"
 
 # Application Configuration
 worker_name        = "student-task-manager"

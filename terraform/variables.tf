@@ -4,13 +4,13 @@
 
 variable "account_id" {
   type        = string
-  description = "The Cloudflare Account ID where resources will be provisioned."
+  description = "Your 32-character Cloudflare Account ID (found in Cloudflare Dashboard -> Workers & Pages -> Account details)."
   default     = ""
 }
 
 variable "cloudflare_account_id" {
   type        = string
-  description = "The Cloudflare Account ID (alias for account_id)."
+  description = "Cloudflare Account ID (alias for account_id)."
   default     = ""
 }
 
