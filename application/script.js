@@ -73,7 +73,7 @@ function initEventListeners() {
   filterPriority.addEventListener('change', renderTasks);
   filterSort.addEventListener('change', renderTasks);
   refreshBtn.addEventListener('click', () => {
-    showToast('Refreshing tasks from Cloudflare Workers KV...', 'info');
+    showToast('Refreshing task list...', 'info');
     loadTasks();
   });
 
@@ -89,7 +89,7 @@ function initEventListeners() {
 }
 
 /**
- * Fetch tasks from Cloudflare Worker REST API (or fallback if running locally)
+ * Fetch tasks from API (or fallback if running locally)
  */
 async function loadTasks() {
   showLoading(true);
@@ -100,16 +100,21 @@ async function loadTasks() {
     }
     const data = await response.json();
     tasks = Array.isArray(data) ? data : (data.tasks || []);
-    backendStatusText.textContent = 'Cloudflare Workers KV (Live)';
+    if (backendStatusText) backendStatusText.textContent = 'Live';
     renderTasks();
   } catch (err) {
-    console.warn('Live API unavailable, utilizing local persistent storage:', err.message);
-    backendStatusText.textContent = 'Local Simulation Mode';
+    console.warn('API unavailable, utilizing local storage:', err.message);
+    if (backendStatusText) backendStatusText.textContent = 'Local Mode';
     // Fallback to localStorage so UI is 100% functional during local testing
     const saved = localStorage.getItem('student_tasks_db');
     if (saved) {
       try {
         tasks = JSON.parse(saved);
+        if (tasks.some(t => (t.title && (t.title.includes('Terraform') || t.title.includes('Cloud Computing'))) || 
+                            (t.description && (t.description.includes('IaC') || t.description.includes('Cloudflare'))))) {
+          tasks = getInitialSampleTasks();
+          saveToLocalStorage();
+        }
       } catch (e) {
         tasks = getInitialSampleTasks();
       }
@@ -466,52 +471,52 @@ function getInitialSampleTasks() {
   return [
     {
       id: "T101",
-      title: "Complete Cloud Computing Assignment",
+      title: "Complete Operating Systems Lab Assignment",
       priority: "High",
       status: "Pending",
       category: "Assignment",
       dueDate: "2026-10-25",
-      description: "Implement automated Cloudflare Workers deployment using Terraform IaC scripts.",
+      description: "Implement CPU scheduling algorithms and multithreaded synchronization in C++.",
       createdAt: new Date(Date.now() - 3600000 * 24 * 3).toISOString()
     },
     {
       id: "T102",
-      title: "Prepare Project Presentation",
+      title: "Prepare Final Year Seminar Presentation",
       priority: "High",
-      status: "Pending",
+      status: "In Progress",
       category: "Presentation",
       dueDate: "2026-10-30",
-      description: "Prepare slides explaining IaC lifecycle, state locking, and provider architecture.",
+      description: "Prepare slides covering project methodology, architecture, and live demonstration.",
       createdAt: new Date(Date.now() - 3600000 * 24 * 2).toISOString()
     },
     {
       id: "T103",
-      title: "Submit Final Year Project Report",
+      title: "Submit Term Project Documentation",
       priority: "Medium",
       status: "Completed",
       category: "Project",
       dueDate: "2026-10-18",
-      description: "Complete chapters 1 to 10 including testing evidence and screenshots.",
+      description: "Format and submit final report document according to department guidelines.",
       createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString()
     },
     {
       id: "T104",
-      title: "Attend Project Viva",
+      title: "Database Management Final Exam Prep",
       priority: "High",
       status: "Pending",
       category: "Examination",
       dueDate: "2026-11-02",
-      description: "Demonstrate terraform plan, apply, modify, destroy, and recreation live.",
+      description: "Review normalization, indexing, query optimization, and ACID transaction properties.",
       createdAt: new Date(Date.now() - 3600000 * 24 * 1).toISOString()
     },
     {
       id: "T105",
-      title: "Upload Laboratory Assignment",
+      title: "Computer Networks Packet Tracer Lab",
       priority: "Low",
       status: "Completed",
       category: "Lab Work",
       dueDate: "2026-10-15",
-      description: "Verify Git commit history and GitHub Actions pipeline log artifacts.",
+      description: "Design and verify VLAN routing and subnet topologies using packet analyzer.",
       createdAt: new Date(Date.now() - 3600000 * 24 * 6).toISOString()
     }
   ];

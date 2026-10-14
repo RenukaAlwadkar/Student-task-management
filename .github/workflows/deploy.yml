@@ -78,6 +78,23 @@ jobs:
         id: validate
         run: terraform validate -no-color
 
+      # Step 6.5: Sync Existing Cloudflare Infrastructure (prevents duplicate resource conflicts)
+      - name: Sync Existing Cloudflare Infrastructure State
+        run: |
+          echo "Checking for existing Cloudflare KV namespace and Worker..."
+          KV_DATA=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/storage/kv/namespaces" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}")
+          
+          KV_ID=$(echo "$KV_DATA" | jq -r '.result[]? | select(.title=="student_tasks") | .id' 2>/dev/null || true)
+          
+          if [ -n "$KV_ID" ] && [ "$KV_ID" != "null" ]; then
+            echo "Discovered existing KV namespace ID: $KV_ID. Adopting into Terraform state..."
+            terraform import cloudflare_workers_kv_namespace.student_tasks "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/$KV_ID" || true
+            terraform import cloudflare_workers_script.student_task_manager "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/student-task-manager" || true
+          else
+            echo "No existing resources found on Cloudflare. Fresh deployment will be provisioned."
+          fi
+
       # Step 7: Generate Execution Plan (Step 15)
       - name: Terraform Plan
         id: plan
