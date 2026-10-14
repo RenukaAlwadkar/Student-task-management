@@ -22,16 +22,21 @@ jobs:
       run:
         working-directory: ./terraform
 
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TF_VAR_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TF_VAR_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
     steps:
       # Step 1: Checkout the code repository
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Terraform CLI with wrapper disabled for direct stdio
+      # Step 2: Set up Terraform CLI
       - name: Setup HashiCorp Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.9.0"
           terraform_wrapper: false
 
       # Step 3: Check Terraform formatting (Step 13)
@@ -45,14 +50,14 @@ jobs:
           echo "Verifying Cloudflare Secrets configuration..."
           MISSING=0
           if [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
-            echo "::error title=Missing Secret::GitHub Secret 'CLOUDFLARE_ACCOUNT_ID' is empty or not set in Settings -> Secrets and variables -> Actions."
+            echo "::error title=Missing Secret::GitHub Secret 'CLOUDFLARE_ACCOUNT_ID' is empty or not set."
             MISSING=1
           else
             echo "CLOUDFLARE_ACCOUNT_ID: [CONFIGURED]"
           fi
 
           if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
-            echo "::error title=Missing Secret::GitHub Secret 'CLOUDFLARE_API_TOKEN' is empty or not set in Settings -> Secrets and variables -> Actions."
+            echo "::error title=Missing Secret::GitHub Secret 'CLOUDFLARE_API_TOKEN' is empty or not set."
             MISSING=1
           else
             echo "CLOUDFLARE_API_TOKEN: [CONFIGURED]"
@@ -66,7 +71,7 @@ jobs:
       # Step 5: Initialize Terraform backend and download Cloudflare provider (Step 12)
       - name: Terraform Init
         id: init
-        run: terraform init
+        run: terraform init -input=false
 
       # Step 6: Validate Terraform configuration syntax (Step 14)
       - name: Terraform Validate
@@ -76,18 +81,10 @@ jobs:
       # Step 7: Generate Execution Plan (Step 15)
       - name: Terraform Plan
         id: plan
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          terraform plan \
-            -var="account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" \
-            -var="api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-            -out=tfplan -no-color
+        run: terraform plan -out=tfplan -no-color
 
       # Step 8: Apply Infrastructure Changes automatically on push to main/master (Step 16)
       - name: Terraform Apply
         id: apply
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: terraform apply -auto-approve tfplan
